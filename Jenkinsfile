@@ -29,7 +29,7 @@ pipeline {
     stage('Push Docker Image to JFrog') {
       steps {
         script {
-          docker.withRegistry("${env.JFROG_URL}/docker-repo", 'JFROG_CREDENTIALS') {
+          docker.withRegistry("http://130.131.164.192:8082/artifactory/docker-repo", 'JFROG_CREDENTIALS') {
             docker.image(env.DOCKER_IMAGE).push()
           }
         }
@@ -58,9 +58,9 @@ pipeline {
 
     stage('Terraform Deploy') {
       steps {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'AWS_CREDENTIALS'
+        withCredentials([[ 
+          $class: 'AmazonWebServicesCredentialsBinding', 
+          credentialsId: 'AWS_CREDENTIALS' 
         ]]) {
           dir('terraform') {
             sh """
