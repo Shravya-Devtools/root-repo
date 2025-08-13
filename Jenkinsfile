@@ -48,8 +48,8 @@ pipeline {
       steps {
         script {
           sh """
-            curl -u ${env.JFROG_CREDS_USR}:${env.JFROG_CREDS_PSW} \
-            -T lambda-package.zip \
+            curl -u ${env.JFROG_CREDS_USR}:${env.JFROG_CREDS_PSW} \\
+            -T lambda-package.zip \\
             "${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip"
           """
         }
@@ -63,23 +63,20 @@ pipeline {
           credentialsId: 'AWS_CREDENTIALS' 
         ]]) {
           dir('terraform') {
-            script {
-              // Temporarily disable remote backend (S3)
-              sh 'mv backend.tf backend.tf.disabled || true'
+            sh """
+              # Temporarily disable backend
+              mv backend.tf backend.tf.disabled || true
 
-              // Run Terraform locally
-              sh """
-                terraform init
-                terraform apply -auto-approve \\
-                  -var="docker_image=${env.DOCKER_IMAGE}" \\
-                  -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
-                  -var='subnets=["subnet-0b9251120b53a0e5d","subnet-02a8d0c471409b4d4"]' \\
-                  -var='security_groups=["sg-0cb0d390361af5359"]'
-              """
+              # Reconfigure Terraform to ignore existing backend
+              terraform init -reconfigure
 
-              // Optional: restore backend file if you want to test S3 backend again later
-              // sh 'mv backend.tf.disabled backend.tf || true'
-            }
+              # Apply infrastructure
+              terraform apply -auto-approve \\
+                -var="docker_image=${env.DOCKER_IMAGE}" \\
+                -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
+                -var='subnets=["subnet-0b9251120b53a0e5d","subnet-02a8d0c471409b4d4"]' \\
+                -var='security_groups=["sg-0cb0d390361af5359"]'
+            """
           }
         }
       }
