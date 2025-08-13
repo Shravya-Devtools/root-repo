@@ -48,8 +48,8 @@ pipeline {
       steps {
         script {
           sh """
-            curl -u ${env.JFROG_CREDS_USR}:${env.JFROG_CREDS_PSW} \\
-            -T lambda-package.zip \\
+            curl -u ${env.JFROG_CREDS_USR}:${env.JFROG_CREDS_PSW} \
+            -T lambda-package.zip \
             "${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip"
           """
         }
@@ -58,19 +58,22 @@ pipeline {
 
     stage('Terraform Deploy') {
       steps {
-        withCredentials([[ 
-          $class: 'AmazonWebServicesCredentialsBinding', 
-          credentialsId: 'AWS_CREDENTIALS' 
+        withCredentials([[
+          $class: 'AmazonWebServicesCredentialsBinding',
+          credentialsId: 'AWS_CREDENTIALS'
         ]]) {
           dir('terraform') {
             sh """
-              # Temporarily disable backend
+              # Rename backend config to disable S3 temporarily
               mv backend.tf backend.tf.disabled || true
 
-              # Reconfigure Terraform to ignore existing backend
+              # Clear Terraform cache and lock file
+              rm -rf .terraform .terraform.lock.hcl
+
+              # Initialize Terraform with local backend
               terraform init -reconfigure
 
-              # Apply infrastructure
+              # Apply with provided variables
               terraform apply -auto-approve \\
                 -var="docker_image=${env.DOCKER_IMAGE}" \\
                 -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
