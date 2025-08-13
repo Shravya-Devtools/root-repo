@@ -2,22 +2,21 @@ provider "aws" {
   region = "eu-central-1"
 }
 
-/*
 resource "aws_iam_role" "lambda_role" {
   name = "lambda_exec_role"
   assume_role_policy = <<EOF
-  {
-    "Version": "2012-10-17",
-    "Statement": [{
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }]
-  }
-  EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Action": "sts:AssumeRole",
+    "Principal": {
+      "Service": "lambda.amazonaws.com"
+    },
+    "Effect": "Allow",
+    "Sid": ""
+  }]
+}
+EOF
 }
 
 resource "aws_iam_policy_attachment" "lambda_logs" {
@@ -70,11 +69,15 @@ resource "aws_ecs_service" "my_service" {
     assign_public_ip = true
   }
 }
-*/
 
-# ✅ Dummy resource to keep terraform doing something safe
+# Fix deprecated ACL usage by separating acl into aws_s3_bucket_acl resource
 resource "aws_s3_bucket" "demo_bucket" {
   bucket = "kk-demo-bucket-${random_id.bucket_id.hex}"
+  # no acl here
+}
+
+resource "aws_s3_bucket_acl" "demo_bucket_acl" {
+  bucket = aws_s3_bucket.demo_bucket.id
   acl    = "private"
 }
 
