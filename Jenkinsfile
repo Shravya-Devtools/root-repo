@@ -63,14 +63,23 @@ pipeline {
           credentialsId: 'AWS_CREDENTIALS' 
         ]]) {
           dir('terraform') {
-            sh """
-              terraform init
-              terraform apply -auto-approve \\
-                -var="docker_image=${env.DOCKER_IMAGE}" \\
-                -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
-                -var='subnets=["subnet-0b9251120b53a0e5d","subnet-02a8d0c471409b4d4"]' \\
-                -var='security_groups=["sg-0cb0d390361af5359"]'
-            """
+            script {
+              // Temporarily disable remote backend (S3)
+              sh 'mv backend.tf backend.tf.disabled || true'
+
+              // Run Terraform locally
+              sh """
+                terraform init
+                terraform apply -auto-approve \\
+                  -var="docker_image=${env.DOCKER_IMAGE}" \\
+                  -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
+                  -var='subnets=["subnet-0b9251120b53a0e5d","subnet-02a8d0c471409b4d4"]' \\
+                  -var='security_groups=["sg-0cb0d390361af5359"]'
+              """
+
+              // Optional: restore backend file if you want to test S3 backend again later
+              // sh 'mv backend.tf.disabled backend.tf || true'
+            }
           }
         }
       }
