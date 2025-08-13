@@ -56,21 +56,23 @@ pipeline {
       }
     }
 
-    stage('Terraform Deploy') {
-      steps {
-        withCredentials([[ 
-          $class: 'AmazonWebServicesCredentialsBinding', 
-          credentialsId: 'AWS_CREDENTIALS' 
-        ]]) {
-          dir('terraform') {
-            sh """
-              mv backend.tf backend.tf.disabled || true
-              rm -rf .terraform .terraform.lock.hcl
-              terraform init -reconfigure
-              terraform apply -auto-approve
-            """
-          }
-        }
+  stage('Terraform Deploy') {
+  steps {
+    withCredentials([[ 
+      $class: 'AmazonWebServicesCredentialsBinding', 
+      credentialsId: 'AWS_CREDENTIALS' 
+    ]]) {
+      dir('terraform') {
+        sh """
+          mv backend.tf backend.tf.disabled || true
+          rm -rf .terraform .terraform.lock.hcl
+          terraform init -reconfigure
+          terraform apply -auto-approve \\
+            -var="docker_image=${env.DOCKER_IMAGE}" \\
+            -var="lambda_zip_url=${env.JFROG_URL}/lambda-repo/lambda-package-${env.BUILD_NUMBER}.zip" \\
+            -var='subnets=["subnet-0b9251120b53a0e5d","subnet-02a8d0c471409b4d4"]' \\
+            -var='security_groups=["sg-0cb0d390361af5359"]'
+        """
       }
     }
   }
