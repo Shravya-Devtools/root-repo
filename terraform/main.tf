@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-central-1"  # Replace with your AWS region
+  region = "eu-central-1"
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -20,17 +20,18 @@ EOF
 }
 
 resource "aws_iam_policy_attachment" "lambda_logs" {
+  name       = "lambda_logs_policy_attachment"  # ✅ Required name argument
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
   roles      = [aws_iam_role.lambda_role.name]
 }
 
 resource "aws_lambda_function" "my_lambda" {
-  filename         = "lambda-package.zip"
+  filename         = "../lambda-package.zip"         # ✅ Fixed path to zip
   function_name    = "my_lambda_function"
   role             = aws_iam_role.lambda_role.arn
   handler          = "handler.lambda_handler"
   runtime          = "nodejs14.x"
-  source_code_hash = filebase64sha256("lambda-package.zip")
+  source_code_hash = filebase64sha256("../lambda-package.zip")  # ✅ Fixed path
 }
 
 resource "aws_ecs_cluster" "my_cluster" {
